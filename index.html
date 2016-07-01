@@ -5,10 +5,40 @@
     <meta charset="UTF-8">
     <title>Timezone Map</title>
     <style>
+        .intro {
+            width: 320px;
+            height: 600px;
+            position: absolute;
+        }
+
+        h1 {
+            color: #111;
+            font-family: 'Helvetica Neue', sans-serif;
+            font-size: 50px;
+            font-weight: bold;
+            letter-spacing: -1px;
+            line-height: 1;
+            text-align: center;
+        }
+
+        h2 {
+            color: #116;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 30px;
+            font-weight: 300;
+            line-height: 32px;
+            margin: 0 0 22px;
+            text-align: center;
+        }
+
+        .part2 {
+            margin-top: 270px;
+        }
         .background {
             margin-left: calc((100%)/5);
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-            background: lavender;
+            /*background: lavender;*/
+            background: #c2efe2;
         }
 
         .path {
@@ -57,10 +87,32 @@
         .grey {
             fill: lightgrey !important;
         }
+
+        .tooltip2 {
+            font-size: 24px;
+        }
+
+        .timer {
+            font-size: 21px;
+        }
     </style>
 </head>
 
 <body>
+    <div class="intro">
+        <h1>timezone map</h1>
+
+        <h2>
+        Timezones Across the World.
+    </h2>
+        <h2>
+        Hover over any Country to get their current Time.
+    </h2>
+
+    <h2 class='part2'>
+        Hover over the table to view which countries are allotted which colors.
+    </h2>
+    </div>
     <script src="//code.jquery.com/jquery-2.0.0.js"></script>
     <script src="//d3js.org/d3.v3.min.js"></script>
     <script src="//d3js.org/topojson.v1.min.js"></script>
@@ -121,23 +173,23 @@
                     return color(d.properties.Name.replace(/[A-Za-z ]/g, ""));
                 })
                 .attr('d', path)
-                .on("mouseleave", function () {
-                   var clas = $(this).attr('class');
-                   var not_area = svg.selectAll('.country');
-                   not_area.classed('grey', false);
+                .on("mouseleave", function() {
+                    var clas = $(this).attr('class');
+                    var not_area = svg.selectAll('.country');
+                    not_area.classed('grey', false);
 
-                   d3.selectAll($(this)).style('fill', '#' + clas.split('_')[1]);
-                   tooltip.classed('hidden', false);
-                   d3.select('.tooltip2').text('UTC TimeZone');
-
-               })
-                .on('mouseenter', function (d) {
+                    d3.selectAll($(this)).style('fill', '#' + clas.split('_')[1]);
+                    d3.select('.tooltip2').text('UTC TimeZone');
+                    d3.selectAll(".tooltip").classed('hidden', true);
+                    stopInterval();
+                })
+                .on('mouseenter', function(d) {
                     var not_area = svg.selectAll('.country');
                     not_area.classed('grey', true);
                     d3.select(this).classed('grey', false).style('fill', 'green');
                     d3.select('.tooltip2').text(d.properties.Name);
-                    data = fields(d.properties.Name.replace(/[A-Za-z ]/g, "").float());
-                    render(data);
+                    data = d.properties.Name.replace(/[A-Za-z ]/g, "").float();
+                    stopInterval(data);
                 })
                 //tooltips
                 .on("mousemove", function(d, i) {
@@ -250,17 +302,17 @@
 
             var tr = d3.selectAll('tbody tr');
             tr
-                .on('mouseover', function () {
+                .on('mouseover', function() {
                     var clas = $(this).attr('class');
                     // console.log(clas.split(' ')[0]);
                     var not_area = svg.selectAll('.country');
-                    var area = svg.selectAll('.'+clas.split(' ')[0]);
+                    var area = svg.selectAll('.' + clas.split(' ')[0]);
                     not_area.classed('grey', true);
                     area.classed('grey', false).style('fill', 'green');
                 })
-                .on('mouseout', function () {
+                .on('mouseout', function() {
                     var clas = $(this).attr('class');
-                    var area = svg.selectAll('.'+clas.split(' ')[0]);
+                    var area = svg.selectAll('.' + clas.split(' ')[0]);
                     var not_area = svg.selectAll('.country');
                     not_area.classed('grey', false);
 
@@ -270,9 +322,17 @@
             //Clock
             console.log(Date());
             var fields;
-            fields = function(d) {
+            fields = function(offset) {
                 var currentTime, hour, minute, second;
-                currentTime = new Date();
+                var d = new Date();
+                var utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+                if (offset) {
+                    var currentTime = new Date(utc + (3600000 * offset));
+
+                } else {
+                    currentTime = new Date(utc);
+                }
+
                 second = currentTime.getSeconds();
                 minute = currentTime.getMinutes() + second / 60;
                 hour = currentTime.getHours() + minute / 60;
@@ -288,35 +348,35 @@
                 }];
             }
             var width, height, offSetX, offSetY, pi, scaleSecs, scaleMins, scaleHours;
-            width = 300;
-            height = 600;
-            offSetX = 150;
-            offSetY = 150;
+            width = 320;
+            height = 520;
+            offSetX = 185;
+            offSetY = 240;
 
             pi = Math.PI;
             scaleSecs = d3.scale.linear().domain([0, 59 + 999 / 1000]).range([0, 2 * pi]);
             scaleMins = d3.scale.linear().domain([0, 59 + 59 / 60]).range([0, 2 * pi]);
             scaleHours = d3.scale.linear().domain([0, 11 + 59 / 60]).range([0, 2 * pi]);
 
-            tickDomain = d3.scale.linear().domain([0, 11 + 59/60]).range([0, 2*pi]);
-            tickDomainInner = d3.scale.linear().domain([0, 59 + 59/60]).range([0, 2*pi]);
+            tickDomain = d3.scale.linear().domain([0, 11 + 59 / 60]).range([0, 2 * pi]);
+            tickDomainInner = d3.scale.linear().domain([0, 59 + 59 / 60]).range([0, 2 * pi]);
             var vis, clockGroup, textGroup, tooltip2;
 
 
             vis = d3.selectAll("body")
                 .append("svg:svg")
                 .attr("width", width)
-                .attr("height", height);
+                .attr("height", height)
 
             tooltip2 = vis.append('svg:g')
-                .attr("transform", "translate(" + offSetX + "," + (offSetY+150) + ")");
+                .attr("transform", "translate(" + offSetX + "," + (offSetY + 150) + ")");
 
             tooltip2.selectAll('text')
                 .data([text_timezone])
                 .enter()
                 .append('text')
                 .attr('class', 'tooltip2')
-                .text(function (d) {
+                .text(function(d) {
                     return d;
                 })
                 .attr("text-anchor", "middle");
@@ -325,7 +385,8 @@
                 .attr("transform", "translate(" + offSetX + "," + offSetY + ")");
 
             textGroup = vis.append('svg:g')
-                .attr("transform", "translate(" + (offSetX) + "," + (offSetY+170) + ")");
+                .attr("transform", "translate(" + (offSetX) + "," + (offSetY + 175) + ")")
+                .attr('class', 'timer');
 
             clockGroup.append("svg:circle")
                 .attr("r", 120).attr("fill", "none")
@@ -361,7 +422,7 @@
                 .data([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
                 .enter()
                 .append("svg:path")
-                .attr("d", function (d){
+                .attr("d", function(d) {
                     return ticks(d);
                 })
                 .attr('class', 'ticks')
@@ -376,7 +437,7 @@
                 .data(innerTicksData)
                 .enter()
                 .append("svg:path")
-                .attr("d", function (d){
+                .attr("d", function(d) {
                     return ticksInner(d);
                 })
                 .attr('class', 'ticksInner')
@@ -444,13 +505,13 @@
                         }
                     })
                     .attr("fill", "none");
-                var timeText = function(d){
-                    time = Math.floor(d[2].numeric) + ':' +
-                        Math.floor(d[1].numeric) + ':' +
-                        Math.round(d[0].numeric);
-                    return time;
-                }
-                console.log(timeText(data));
+                var timeText = function(d) {
+                        time = Math.floor(d[2].numeric) + ':' +
+                            Math.floor(d[1].numeric) + ':' +
+                            Math.round(d[0].numeric);
+                        return time;
+                    }
+                    // console.log(timeText(data));
                 textGroup.selectAll('text')
                     .remove();
                 textGroup.selectAll('text')
@@ -458,17 +519,27 @@
                     .enter()
                     .append("text")
                     .text(
-                    function (d) {
-                        return timeText(data);
-                    })
+                        function(d) {
+                            return timeText(data);
+                        })
                     .attr("text-anchor", "middle");
             };
             var data;
-
-            setInterval ( function() {
-                data = fields();
+            var run;
+            var runFunction = function(d) {
+                console.log(d);
+                data = fields(d);
                 return render(data);
-            }, 1000);
+            }
+            run = setInterval(runFunction, 1000);
+            // run;
+            function stopInterval(d) {
+                clearInterval(run);
+                run = setInterval(function() {
+                    runFunction(d);
+                }, 1000);
+                // return run;
+            }
         });
     </script>
 </body>
