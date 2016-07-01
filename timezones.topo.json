@@ -1779,7 +1779,7 @@
                     [-2109, -2110, -2111, -2112]
                 ],
                 "properties": {
-                    "Name": "Gambia, The 0"
+                    "Name": "Gambia The 0"
                 }
             }, {
                 "type": "Polygon",
@@ -2233,7 +2233,7 @@
                     ]
                 ],
                 "properties": {
-                    "Name": "Guinea-Bissau 0"
+                    "Name": "Guinea Bissau 0"
                 }
             }, {
                 "type": "Polygon",
@@ -3114,7 +3114,7 @@
                     ]
                 ],
                 "properties": {
-                    "Name": "Myanmar (Burma) +6.5"
+                    "Name": "Myanmar Burma +6.5"
                 }
             }, {
                 "type": "Polygon",
@@ -4503,7 +4503,7 @@
                     ]
                 ],
                 "properties": {
-                    "Name": "Tanzania, United Republic of +3"
+                    "Name": "Tanzania United Republic of +3"
                 }
             }, {
                 "type": "MultiPolygon",

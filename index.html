@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Timezone Map</title>
     <style>
         svg {
-            margin-left: calc((100%)/5) ;
+            margin-left: calc((100%)/5);
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            background: lavender;
         }
+
         path {
             fill: none;
             stroke: #fff;
         }
+
         .country {
             stroke: #000;
         }
+
         .tooltip {
             color: #222;
             background: #fff;
@@ -24,14 +30,17 @@
             opacity: 0.9;
             position: absolute;
         }
+
         table {
             margin-left: 26%;
             float: left;
         }
+
         thead {
             font-size: 22px;
             text-align: center;
         }
+
         td {
             width: 85px;
             font-size: 17px;
@@ -40,23 +49,28 @@
             height: 20px;
             text-align: center;
         }
+
         .active {
-            stroke: blue;
-            stroke-width: 2;
+            outline: #000 solid;
+        }
+
+        .grey {
+            fill: lightgrey !important;
         }
     </style>
 </head>
+
 <body>
     <script src="//code.jquery.com/jquery-2.0.0.js"></script>
     <script src="//d3js.org/d3.v3.min.js"></script>
     <script src="//d3js.org/topojson.v1.min.js"></script>
     <script>
-        var w = 1200,
-            h = 740;
+        var w = 1150,
+            h = 540;
 
         var projection = d3.geo.mercator()
-        .translate([w/2, h/2])
-        .scale(200);
+            .translate([w / 2, h / 2])
+            .scale(200);
 
         var color = d3.scale.category20(); //20 color scale
 
@@ -68,7 +82,7 @@
             .attr('width', w)
             .attr('height', h)
             .call(d3.behavior.zoom()
-            .on('zoom', redraw))
+                .on('zoom', redraw))
             .append('g');
 
         var tooltip = d3.select('body').append('div')
@@ -78,164 +92,179 @@
             var s = d3.event.scale;
             var t = d3.event.translate;
 
-            svg.style("stroke-width", 1/s).attr("transform",
-            "translate(" + t + ")scale(" + s + ")");
+            svg.style("stroke-width", 1 / s).attr("transform",
+                "translate(" + t + ")scale(" + s + ")");
         }
 
-        d3.json('timezones.topo.json', function (error, data) {
+        var new_dic = [];
+        d3.json('timezones.topo.json', function(error, data) {
             if (error) console.log(error);
 
             svg.selectAll('path')
                 .data(topojson.feature(data, data.objects.timezones).features)
                 .enter()
                 .append('path')
-                .attr('class', function (d) {
-                    return 'country ' +  color(d.properties.Name.replace(/[A-Za-z ]/g, ""));
+                .attr('class', function(d) {
+                    var item = d.properties.Name.replace(/[A-Za-z ]/g, "");
+                    if (new_dic.indexOf(item) == -1) {
+                        new_dic.push(item);
+                    }
+                    return 'country ' + 'color_' + color(d.properties.Name.replace(/[A-Za-z ]/g, "")).slice(1, 7);
                 })
-                .attr('title', function (d) { return d.properties.Name; })
-                .style('fill', function (d) { return color(d.properties.Name.replace(/[A-Za-z ]/g, ""));
+                .attr('title', function(d) {
+                    return d.properties.Name;
+                })
+                .style('fill', function(d) {
+                    return color(d.properties.Name.replace(/[A-Za-z ]/g, ""));
                 })
                 .attr('d', path)
+                .on("mouseleave", function () { // mouseout not working
+                   var clas = $(this).attr('class');
+                   var not_area = svg.selectAll('.country');
+                   not_area.classed('grey', false);
+
+                   d3.selectAll($(this)).style('fill', '#' + clas.split('_')[1]);
+                   tooltip.classed('hidden', false);
+               })
+                .on('mouseenter', function () {
+                    var not_area = svg.selectAll('.country');
+                    not_area.classed('grey', true);
+                    d3.select(this).classed('grey', false).style('fill', 'green');
+                })
                 //tooltips
-                .on("mousemove", function (d, i) {
-                    var mouse = d3.mouse(svg.node()).map(function (d) {
+                .on("mousemove", function(d, i) {
+                    var mouse = d3.mouse(svg.node()).map(function(d) {
                         return parseInt(d);
                     });
 
                     tooltip.classed('hidden', false)
-                        .attr("style", "left:"+(mouse[0]+20) + 'px;top:'
-                        +(mouse[1]-60) + "px")
+                        .attr("style", "left:" + (mouse[0] + 350) + 'px;top:' +
+                            (mouse[1] - 40) + "px")
                         .html(d.properties.Name);
                 })
-                .on('mouseout', function (d, i) {
+                .on('mouseout', function(d, i) {
                     tooltip.classed('hidden', true);
                 });
-        });
 
-        var table = d3.select('body')
-            .append('table');
-        var thead = table.append("thead");
-        var tbody = table.append("tbody");
+            // Table
 
-        var colors = [-10.0,-9.0,-8.0,-7.0,-6.0,-5.0,-4.0,-3.5,-3.0,-1.0,0.0,
-            1.0,2.0,3.0,3.5,4.0,4.5,5.0,5.5,5.75,6.0,6.5,7.0,8.0,9.0,9.5,10.0
-            ,11.0,12.0];
+            var table = d3.select('body')
+                .append('table');
+            var thead = table.append("thead");
+            var tbody = table.append("tbody");
 
-        var dict = [];
+            String.prototype.float = function() {
+                return parseFloat(this);
+            }
+            new_dic.sort(function(a, b) {
+                    return a.float() - b.float();
+                })
+                // console.log(new_dic);
+            var dict1 = new_dic.slice(0, 14);
+            var dict2 = new_dic.slice(14, 29);
 
-        for (var i=0; i < colors.length; i++){
-            // console.log(colors[i]);
-            dict.push({
-                key: colors[i],
-                value: color(i)
-            });
-        }
-        // thead.append('tr')
-        //     .selectAll('th')
-        //     .data(['Value', 'Color'])
-        //     .enter()
-        //     .append('th')
-        //     .text(function (d) {
-        //         return d;
-        //     })
-        // var tr = tbody.selectAll('tr')
-        //     .data(dict)
-        //     .enter()
-        //     .append('tr')
-        //
-        // tr.append('td')
-        //     .text(function (d) {
-        //         return d.key;
-        //     });
-        //
-        // tr.append('td')
-        //     .style('background', function (d) {
-        //         return d.value;
-        //     })
-        //     .style('color', '#000')
-        //     .text(function (d) {
-        //         return d.value;
-        //     });
+            thead.append('tr')
+                .selectAll('th')
+                .data(['Value', 'Color'])
+                .enter()
+                .append('th')
+                .text(function(d) {
+                    return d;
+                });
 
-        var dict1 = dict.slice(0, 14);
-        var dict2 = dict.slice(14, 29);
+            var tr = tbody.selectAll('tr')
+                .data(dict1)
+                .enter()
+                .append('tr')
+                .attr('class', function(d) {
+                    return 'color_' + color(d).slice(1, 7);
+                });
 
-        thead.append('tr')
-            .selectAll('th')
-            .data(['Value', 'Color'])
-            .enter()
-            .append('th')
-            .text(function (d) {
-                return d;
-            });
+            tr.append('td')
+                .text(function(d) {
+                    return d;
+                });
 
-        var tr = tbody.selectAll('tr')
-            .data(dict1)
-            .enter()
-            .append('tr')
-            .attr('class', function (d) {
-                return d.value;
-            });
-
-        tr.append('td')
-            .text(function (d) {
-                return d.key;
-            });
-
-        tr.append('td')
-        .style('background', function (d) {
-            return d.value;
-        })
-        .style('color', '#000')
-        .text(function (d) {
-            return d.value;
-        });
+            tr.append('td')
+                .style('background', function(d) {
+                    return color(d);
+                })
+                .style('color', '#000')
+                .text(function(d) {
+                    return color(d);
+                });
 
 
-        var table2 = d3.select('body')
-            .append('table');
-        var thead2 = table2.append("thead");
-        var tbody2 = table2.append("tbody");
+            var table2 = d3.select('body')
+                .append('table');
+            var thead2 = table2.append("thead");
+            var tbody2 = table2.append("tbody");
 
-        thead2.append('tr')
-            .selectAll('th')
-            .data(['Value', 'Color'])
-            .enter()
-            .append('th')
-            .text(function (d) {
-                return d;
-            });
-        var tr = tbody2.selectAll('tr')
-            .data(dict2)
-            .enter()
-            .append('tr')
-            .attr('class', function (d) {
-                return d.value;
-            });
+            thead2.append('tr')
+                .selectAll('th')
+                .data(['Value', 'Color'])
+                .enter()
+                .append('th')
+                .text(function(d) {
+                    return d;
+                });
+            var tr = tbody2.selectAll('tr')
+                .data(dict2)
+                .enter()
+                .append('tr')
+                .attr('class', function(d) {
+                    return 'color_' + color(d).slice(1, 7);
+                });
 
-        tr.append('td')
-            .text(function (d) {
-                return d.key;
-            });
+            tr.append('td')
+                .text(function(d) {
+                    return d;
+                });
 
-        tr.append('td')
-            .style('background', function (d) {
-                return d.value;
-            })
-            .style('color', '#000')
-            .text(function (d) {
-                return d.value;
-            });
+            tr.append('td')
+                .style('background', function(d) {
+                    return color(d);
+                })
+                .style('color', '#000')
+                .text(function(d) {
+                    return color(d);
+                });
 
-        $('tbody tr').hover( function () {
+            $('tbody tr').hover(function() {
                 cl = $(this).attr('class');
-                console.log(cl);
-                $(cl).addClass('active');
-            }, function () {
-                $(cl).removeClass('active');
+                // d3.selectAll('.'+cl)
+                //     .classed('active2', true);
+                $('.' + cl).each(function() {
+                    $(this).addClass('active');
+                })
+            }, function() {
+                $('.' + cl).each(function() {
+                    $(this).removeClass('active');
+                })
             });
 
+            var tr = d3.selectAll('tbody tr');
+            tr
+                .on('mouseover', function () {
+                    var clas = $(this).attr('class');
+                    // console.log(clas.split(' ')[0]);
+                    var not_area = svg.selectAll('.country');
+                    var area = svg.selectAll('.'+clas.split(' ')[0]);
+                    not_area.classed('grey', true);
+                    area.classed('grey', false).style('fill', 'green');
+                })
+                .on('mouseout', function () {
+                    var clas = $(this).attr('class');
+                    var area = svg.selectAll('.'+clas.split(' ')[0]);
+                    var not_area = svg.selectAll('.country');
+                    not_area.classed('grey', false);
 
+                    area.style('fill', '#' + clas.split('_')[1]);
+                });
+
+            //Clock
+        });
     </script>
 </body>
+
 </html>
