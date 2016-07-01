@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Timezone Map</title>
+    <style>
+        svg {
+            margin-left: calc((100%)/5) ;
+        }
+        path {
+            fill: none;
+            stroke: #fff;
+        }
+        .country {
+            stroke: #000;
+        }
+        .tooltip {
+            color: #222;
+            background: #fff;
+            padding: .5em;
+            text-shadow: #f5f5f5 0 1px 0;
+            border-radius: 2px;
+            box-shadow: 0px 0px 2px 0px #a6a6a6;
+            opacity: 0.9;
+            position: absolute;
+        }
+        table {
+            margin-left: 26%;
+            float: left;
+        }
+        thead {
+            font-size: 22px;
+            text-align: center;
+        }
+        td {
+            width: 85px;
+            font-size: 17px;
+            padding-top: 2px;
+            padding-bottom: 2px;
+            height: 20px;
+            text-align: center;
+        }
+        .active {
+            stroke: blue;
+            stroke-width: 2;
+        }
+    </style>
+</head>
+<body>
+    <script src="//code.jquery.com/jquery-2.0.0.js"></script>
+    <script src="//d3js.org/d3.v3.min.js"></script>
+    <script src="//d3js.org/topojson.v1.min.js"></script>
+    <script>
+        var w = 1200,
+            h = 740;
+
+        var projection = d3.geo.mercator()
+        .translate([w/2, h/2])
+        .scale(200);
+
+        var color = d3.scale.category20(); //20 color scale
+
+        var path = d3.geo.path()
+            .projection(projection);
+
+        var svg = d3.select('body')
+            .append('svg')
+            .attr('width', w)
+            .attr('height', h)
+            .call(d3.behavior.zoom()
+            .on('zoom', redraw))
+            .append('g');
+
+        var tooltip = d3.select('body').append('div')
+            .attr('class', 'hidden tooltip');
+
+        function redraw() {
+            var s = d3.event.scale;
+            var t = d3.event.translate;
+
+            svg.style("stroke-width", 1/s).attr("transform",
+            "translate(" + t + ")scale(" + s + ")");
+        }
+
+        d3.json('timezones.topo.json', function (error, data) {
+            if (error) console.log(error);
+
+            svg.selectAll('path')
+                .data(topojson.feature(data, data.objects.timezones).features)
+                .enter()
+                .append('path')
+                .attr('class', function (d) {
+                    return 'country ' +  color(d.properties.Name.replace(/[A-Za-z ]/g, ""));
+                })
+                .attr('title', function (d) { return d.properties.Name; })
+                .style('fill', function (d) { return color(d.properties.Name.replace(/[A-Za-z ]/g, ""));
+                })
+                .attr('d', path)
+                //tooltips
+                .on("mousemove", function (d, i) {
+                    var mouse = d3.mouse(svg.node()).map(function (d) {
+                        return parseInt(d);
+                    });
+
+                    tooltip.classed('hidden', false)
+                        .attr("style", "left:"+(mouse[0]+20) + 'px;top:'
+                        +(mouse[1]-60) + "px")
+                        .html(d.properties.Name);
+                })
+                .on('mouseout', function (d, i) {
+                    tooltip.classed('hidden', true);
+                });
+        });
+
+        var table = d3.select('body')
+            .append('table');
+        var thead = table.append("thead");
+        var tbody = table.append("tbody");
+
+        var colors = [-10.0,-9.0,-8.0,-7.0,-6.0,-5.0,-4.0,-3.5,-3.0,-1.0,0.0,
+            1.0,2.0,3.0,3.5,4.0,4.5,5.0,5.5,5.75,6.0,6.5,7.0,8.0,9.0,9.5,10.0
+            ,11.0,12.0];
+
+        var dict = [];
+
+        for (var i=0; i < colors.length; i++){
+            // console.log(colors[i]);
+            dict.push({
+                key: colors[i],
+                value: color(i)
+            });
+        }
+        // thead.append('tr')
+        //     .selectAll('th')
+        //     .data(['Value', 'Color'])
+        //     .enter()
+        //     .append('th')
+        //     .text(function (d) {
+        //         return d;
+        //     })
+        // var tr = tbody.selectAll('tr')
+        //     .data(dict)
+        //     .enter()
+        //     .append('tr')
+        //
+        // tr.append('td')
+        //     .text(function (d) {
+        //         return d.key;
+        //     });
+        //
+        // tr.append('td')
+        //     .style('background', function (d) {
+        //         return d.value;
+        //     })
+        //     .style('color', '#000')
+        //     .text(function (d) {
+        //         return d.value;
+        //     });
+
+        var dict1 = dict.slice(0, 14);
+        var dict2 = dict.slice(14, 29);
+
+        thead.append('tr')
+            .selectAll('th')
+            .data(['Value', 'Color'])
+            .enter()
+            .append('th')
+            .text(function (d) {
+                return d;
+            });
+
+        var tr = tbody.selectAll('tr')
+            .data(dict1)
+            .enter()
+            .append('tr')
+            .attr('class', function (d) {
+                return d.value;
+            });
+
+        tr.append('td')
+            .text(function (d) {
+                return d.key;
+            });
+
+        tr.append('td')
+        .style('background', function (d) {
+            return d.value;
+        })
+        .style('color', '#000')
+        .text(function (d) {
+            return d.value;
+        });
+
+
+        var table2 = d3.select('body')
+            .append('table');
+        var thead2 = table2.append("thead");
+        var tbody2 = table2.append("tbody");
+
+        thead2.append('tr')
+            .selectAll('th')
+            .data(['Value', 'Color'])
+            .enter()
+            .append('th')
+            .text(function (d) {
+                return d;
+            });
+        var tr = tbody2.selectAll('tr')
+            .data(dict2)
+            .enter()
+            .append('tr')
+            .attr('class', function (d) {
+                return d.value;
+            });
+
+        tr.append('td')
+            .text(function (d) {
+                return d.key;
+            });
+
+        tr.append('td')
+            .style('background', function (d) {
+                return d.value;
+            })
+            .style('color', '#000')
+            .text(function (d) {
+                return d.value;
+            });
+
+        $('tbody tr').hover( function () {
+                cl = $(this).attr('class');
+                console.log(cl);
+                $(cl).addClass('active');
+            }, function () {
+                $(cl).removeClass('active');
+            });
+
+
+    </script>
+</body>
+</html>
