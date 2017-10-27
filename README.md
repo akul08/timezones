@@ -1,2 +1,2 @@
-# timezones
-World Map containing Timezones across countries made using d3.
+# Timezones
+World Map containing Timezones across countries made using D3.
